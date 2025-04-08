@@ -1,5 +1,5 @@
 import AdminLayout from "@/layouts/AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Search, 
@@ -9,28 +9,38 @@ import {
   Edit, 
   Trash, 
   Filter,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
-
-// Mock data for users
-const mockUsers = [
-  { id: '1', name: 'John Doe', email: 'john.doe@example.com', role: 'User', status: 'Active', lastLogin: '2023-04-01T10:23:45' },
-  { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Admin', status: 'Active', lastLogin: '2023-04-02T14:57:32' },
-  { id: '3', name: 'Bob Johnson', email: 'bob.johnson@example.com', role: 'User', status: 'Inactive', lastLogin: '2023-03-25T09:12:18' },
-  { id: '4', name: 'Alice Williams', email: 'alice.williams@example.com', role: 'User', status: 'Active', lastLogin: '2023-04-03T08:45:29' },
-  { id: '5', name: 'Charlie Brown', email: 'charlie.brown@example.com', role: 'User', status: 'Pending', lastLogin: '2023-03-20T11:34:56' },
-  { id: '6', name: 'Diana Miller', email: 'diana.miller@example.com', role: 'Admin', status: 'Active', lastLogin: '2023-04-01T16:23:11' },
-  { id: '7', name: 'Edward Davis', email: 'edward.davis@example.com', role: 'User', status: 'Active', lastLogin: '2023-03-30T13:45:22' },
-  { id: '8', name: 'Fiona Clark', email: 'fiona.clark@example.com', role: 'User', status: 'Inactive', lastLogin: '2023-03-15T10:12:45' },
-  { id: '9', name: 'George Wilson', email: 'george.wilson@example.com', role: 'User', status: 'Active', lastLogin: '2023-04-02T09:34:17' },
-  { id: '10', name: 'Hannah Moore', email: 'hannah.moore@example.com', role: 'User', status: 'Pending', lastLogin: '2023-03-28T15:22:36' },
-];
+import axios from "axios";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState(mockUsers);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedRole, setSelectedRole] = useState('All');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get('http://localhost:5000/api/users');
+      setUsers(response.data);
+      setFilteredUsers(response.data);
+    } catch (err) {
+      setError('Failed to fetch users. Please try again later.');
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (e) => {
     const term = e.target.value;
@@ -49,7 +59,7 @@ const Users = () => {
   };
 
   const filterUsers = (term, status, role) => {
-    let filtered = mockUsers;
+    let filtered = users;
     
     // Filter by search term
     if (term.trim() !== '') {
@@ -76,6 +86,46 @@ const Users = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/users/${userId}`);
+        fetchUsers(); // Refresh the users list
+      } catch (err) {
+        console.error('Error deleting user:', err);
+        alert('Failed to delete user. Please try again.');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <div className="text-red-600 text-center">
+            <p className="text-lg font-semibold">{error}</p>
+            <button 
+              onClick={fetchUsers}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -145,7 +195,7 @@ const Users = () => {
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg font-semibold">Users</CardTitle>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Showing <span className="font-medium">{filteredUsers.length}</span> of <span className="font-medium">{mockUsers.length}</span> users
+                Showing <span className="font-medium">{filteredUsers.length}</span> of <span className="font-medium">{users.length}</span> users
               </div>
             </div>
           </CardHeader>
@@ -198,7 +248,10 @@ const Users = () => {
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
                           </button>
-                          <button className="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:text-red-400 rounded-md transition-colors">
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:text-red-400 rounded-md transition-colors"
+                          >
                             <Trash className="h-4 w-4" />
                             <span className="sr-only">Delete</span>
                           </button>
