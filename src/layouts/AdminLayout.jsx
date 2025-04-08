@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Users, Package, Settings, BarChart, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const AdminLayout = ({ children }) => {
-  // Track current path to determine active link
   const [activePath, setActivePath] = useState("");
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-  // Set active path on component mount and when location changes
   useEffect(() => {
     // Get current path from window location
     const path = window.location.pathname;
     setActivePath(path);
+
+    // Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    setUser(userData);
 
     // Add event listener for route changes (if using client-side routing)
     const handleRouteChange = () => {
@@ -23,6 +28,13 @@ const AdminLayout = ({ children }) => {
       window.removeEventListener("popstate", handleRouteChange);
     };
   }, []);
+
+  // Function to handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   // Function to determine if a link is active
   const isActive = (path) => {
@@ -100,14 +112,19 @@ const AdminLayout = ({ children }) => {
             <div className="border-t border-[#0058a6] pt-4">
               <div className="flex items-center mb-3">
                 <div className="h-9 w-9 rounded-full bg-[#0058a6] flex items-center justify-center text-[#7cc7fc]">
-                  <span className="text-sm font-semibold">AD</span>
+                  <span className="text-sm font-semibold">
+                    {user?.fullName?.split(' ').map(n => n[0]).join('') || 'AD'}
+                  </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-white">Admin User</p>
-                  <p className="text-xs text-[#37aaf8]">admin@example.com</p>
+                  <p className="text-sm font-medium text-white">{user?.fullName || 'Admin User'}</p>
+                  <p className="text-xs text-[#37aaf8]">{user?.email || 'admin@example.com'}</p>
                 </div>
               </div>
-              <button className="flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-[#e0f0fe] hover:bg-[#084b88]">
+              <button 
+                onClick={handleLogout}
+                className="flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-[#e0f0fe] hover:bg-[#084b88]"
+              >
                 <LogOut className="mr-3 h-5 w-5 text-[#37aaf8]" />
                 Log out
               </button>
