@@ -13,6 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import api from "@/utils/api";
+import UserModal from "@/components/UserModal";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,11 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -108,6 +114,36 @@ const Users = () => {
     }
   };
 
+  const handleAddUser = () => {
+    setIsEditing(false);
+    setSelectedUser(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    setIsEditing(true);
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveUser = async (userData) => {
+    try {
+      if (isEditing) {
+        // Update existing user
+        await api.put(`/users/${selectedUser.id}`, userData);
+      } else {
+        // Create new user
+        await api.post('/users', userData);
+      }
+      
+      // Refresh the users list
+      fetchUsers();
+    } catch (err) {
+      console.error('Error saving user:', err);
+      throw err; // Re-throw to let the modal handle the error
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -144,7 +180,10 @@ const Users = () => {
             <h1 className="text-3xl font-bold tracking-tight text-[#084b88] dark:text-gray-100">Users Management</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-2">Manage all users and their permissions on the platform</p>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 inline-flex items-center px-4 py-2.5 text-sm font-medium text-white rounded-lg shadow-sm transition-colors">
+          <button 
+            onClick={handleAddUser}
+            className="bg-blue-600 hover:bg-blue-700 inline-flex items-center px-4 py-2.5 text-sm font-medium text-white rounded-lg shadow-sm transition-colors"
+          >
             <UserPlus className="mr-2 h-4 w-4" />
             Add New User
           </button>
@@ -253,7 +292,10 @@ const Users = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{formatDate(user.lastLogin)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                          <button className="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 dark:hover:text-blue-400 rounded-md transition-colors">
+                          <button 
+                            onClick={() => handleEditUser(user)}
+                            className="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 dark:hover:text-blue-400 rounded-md transition-colors"
+                          >
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
                           </button>
@@ -298,6 +340,15 @@ const Users = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* User Modal */}
+      <UserModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveUser}
+        user={selectedUser}
+        isEditing={isEditing}
+      />
     </AdminLayout>
   );
 };
