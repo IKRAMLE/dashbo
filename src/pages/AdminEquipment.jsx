@@ -257,8 +257,11 @@ const Equipment = () => {
                   <div className="text-sm text-gray-500">
                     {item.category} • {item.location}
                   </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    Owner: {item.fullname || 'N/A'}
+                  </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="text-[#0070cc] font-bold">${item.price}/{item.rentalPeriod}</span>
+                    <span className="text-[#0070cc] font-bold">{item.price} DH/{item.rentalPeriod}</span>
                     <div className="space-x-1">
                       <button 
                         onClick={() => handleEditEquipment(item)}
