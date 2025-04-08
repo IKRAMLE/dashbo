@@ -24,8 +24,25 @@ import {
   Area,
   AreaChart
 } from "recharts";
-import { ArrowUpRight, Users, Package, DollarSign, ArrowDownRight, BarChart as BarChartIcon, PieChart as PieChartIcon, Activity, TrendingUp } from "lucide-react";
+import { 
+  ArrowUpRight, 
+  Users, 
+  Package, 
+  DollarSign, 
+  ArrowDownRight, 
+  BarChart as BarChartIcon, 
+  PieChart as PieChartIcon, 
+  Activity, 
+  TrendingUp,
+  Plus,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  XCircle
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/layouts/AdminLayout";
 import axios from "axios";
 
@@ -42,6 +59,60 @@ const AdminDashboard = () => {
   const [equipmentCategories, setEquipmentCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Mock data for recent activity
+  const recentActivity = [
+    {
+      id: 1,
+      type: 'user',
+      action: 'New user registered',
+      user: 'John Doe',
+      time: '2 minutes ago',
+      status: 'success'
+    },
+    {
+      id: 2,
+      type: 'equipment',
+      action: 'Equipment rented',
+      user: 'Alice Smith',
+      equipment: 'Excavator XL-2000',
+      time: '15 minutes ago',
+      status: 'success'
+    },
+    {
+      id: 3,
+      type: 'alert',
+      action: 'Low stock alert',
+      equipment: 'Bulldozer BD-500',
+      time: '1 hour ago',
+      status: 'warning'
+    },
+    {
+      id: 4,
+      type: 'maintenance',
+      action: 'Maintenance completed',
+      equipment: 'Crane CR-3000',
+      time: '2 hours ago',
+      status: 'success'
+    },
+    {
+      id: 5,
+      type: 'payment',
+      action: 'Payment received',
+      user: 'Bob Johnson',
+      amount: '$2,500',
+      time: '3 hours ago',
+      status: 'success'
+    }
+  ];
+
+  // Quick action buttons
+  const quickActions = [
+    { name: 'Add Equipment', icon: <Plus className="h-4 w-4" />, color: 'bg-blue-500 hover:bg-blue-600' },
+    { name: 'New Rental', icon: <Package className="h-4 w-4" />, color: 'bg-green-500 hover:bg-green-600' },
+    { name: 'View Reports', icon: <BarChartIcon className="h-4 w-4" />, color: 'bg-purple-500 hover:bg-purple-600' },
+    { name: 'Maintenance', icon: <Activity className="h-4 w-4" />, color: 'bg-amber-500 hover:bg-amber-600' }
+  ];
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -90,6 +161,20 @@ const AdminDashboard = () => {
       </AdminLayout>
     );
   }
+
+  // Function to get status icon based on activity type
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
   return (
     <AdminLayout>
@@ -314,6 +399,84 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* New Section: Recent Activity and Quick Actions */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Recent Activity */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow md:col-span-2">
+            <CardHeader className="border-b pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                  <CardDescription className="text-xs">Latest updates from your platform</CardDescription>
+                </div>
+                <div className="p-2 rounded-full bg-indigo-100">
+                  <Clock className="h-4 w-4 text-indigo-600" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-4">
+                    <div className="mt-1">
+                      {getStatusIcon(activity.status)}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{activity.action}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {activity.time}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {activity.type === 'user' && `User: ${activity.user}`}
+                        {activity.type === 'equipment' && `User: ${activity.user} | Equipment: ${activity.equipment}`}
+                        {activity.type === 'alert' && `Equipment: ${activity.equipment}`}
+                        {activity.type === 'maintenance' && `Equipment: ${activity.equipment}`}
+                        {activity.type === 'payment' && `User: ${activity.user} | Amount: ${activity.amount}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <Button variant="outline" className="w-full">View All Activity</Button>
+            </CardFooter>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="border-b pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+                  <CardDescription className="text-xs">Common tasks and shortcuts</CardDescription>
+                </div>
+                <div className="p-2 rounded-full bg-teal-100">
+                  <Plus className="h-4 w-4 text-teal-600" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 gap-3">
+                {quickActions.map((action, index) => (
+                  <Button 
+                    key={index} 
+                    className={`${action.color} text-white w-full justify-start`}
+                  >
+                    {action.icon}
+                    <span className="ml-2">{action.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4">
+              <Button variant="outline" className="w-full">More Actions</Button>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   );
