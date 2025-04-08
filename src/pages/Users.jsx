@@ -12,7 +12,7 @@ import {
   Download,
   Loader2
 } from "lucide-react";
-import axios from "axios";
+import api from "@/utils/api";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,11 +31,16 @@ const Users = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:5000/api/users');
+      
+      const response = await api.get('/users');
       setUsers(response.data);
       setFilteredUsers(response.data);
     } catch (err) {
-      setError('Failed to fetch users. Please try again later.');
+      if (err.response && err.response.status === 401) {
+        setError('Authentication required. Please log in.');
+      } else {
+        setError('Failed to fetch users. Please try again later.');
+      }
       console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
@@ -90,11 +95,15 @@ const Users = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${userId}`);
+        await api.delete(`/users/${userId}`);
         fetchUsers(); // Refresh the users list
       } catch (err) {
         console.error('Error deleting user:', err);
-        alert('Failed to delete user. Please try again.');
+        if (err.response && err.response.status === 401) {
+          alert('Authentication required. Please log in.');
+        } else {
+          alert('Failed to delete user. Please try again.');
+        }
       }
     }
   };
