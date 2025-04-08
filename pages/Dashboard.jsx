@@ -492,7 +492,11 @@ const AdminDashboard = () => {
                 {quickActions.map((action, index) => (
                   <Button 
                     key={index} 
-                    className={`${action.color} text-white w-full justify-start`}
+                    className={`${
+                      action.name.toLowerCase().includes('maintenance') 
+                        ? 'bg-amber-600 hover:bg-amber-700' 
+                        : action.color
+                    } text-white w-full justify-start`}
                   >
                     {getIconComponent(action.icon)}
                     <span className="ml-2">{action.name}</span>

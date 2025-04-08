@@ -1,16 +1,18 @@
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 // Card component
-const Card = React.forwardRef(({ className, ...props }, ref) => {
+const Card = ({ className, ...props }) => {
   return (
     <div
-      ref={ref}
-      className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
+      className={cn(
+        "rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm",
+        className
+      )}
       {...props}
     />
   );
-});
-Card.displayName = "Card";
+};
 
 // CardHeader component
 const CardHeader = React.forwardRef(({ className, ...props }, ref) => {
