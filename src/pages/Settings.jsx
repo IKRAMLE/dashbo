@@ -54,6 +54,7 @@ const Settings = () => {
     } catch (err) {
       console.error('Error fetching settings:', err);
       setError('Failed to load settings');
+      toast.error('Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -61,17 +62,62 @@ const Settings = () => {
 
   const handleSaveSettings = async (section, updates) => {
     try {
+      setLoading(true);
       const response = await api.put('/settings', updates);
       setSettings(response.data);
       toast.success('Settings updated successfully');
     } catch (err) {
       console.error('Error updating settings:', err);
       toast.error('Failed to update settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSwitchChange = async (section, field, value) => {
+    try {
+      setLoading(true);
+      let updates = {};
+      
+      if (section === 'general') {
+        updates = { [field]: value };
+      } else if (section === 'notifications') {
+        updates = {
+          notifications: {
+            ...settings.notifications,
+            [field]: value
+          }
+        };
+      } else if (section === 'security') {
+        updates = {
+          security: {
+            ...settings.security,
+            [field]: value
+          }
+        };
+      } else if (section === 'api') {
+        updates = {
+          api: {
+            ...settings.api,
+            [field]: value
+          }
+        };
+      }
+
+      const response = await api.put('/settings', updates);
+      setSettings(response.data);
+      toast.success('Setting updated successfully');
+    } catch (err) {
+      console.error('Error updating setting:', err);
+      toast.error('Failed to update setting');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRegenerateApiKey = async () => {
     try {
+      setLoading(true);
       const response = await api.post('/settings/regenerate-api-key');
       setSettings(prev => ({
         ...prev,
@@ -84,6 +130,8 @@ const Settings = () => {
     } catch (err) {
       console.error('Error regenerating API key:', err);
       toast.error('Failed to regenerate API key');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -172,7 +220,7 @@ const Settings = () => {
                   <Switch 
                     id="maintenance-mode" 
                     checked={settings.maintenanceMode}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, maintenanceMode: checked }))}
+                    onCheckedChange={(checked) => handleSwitchChange('general', 'maintenanceMode', checked)}
                   />
                 </div>
 
@@ -184,7 +232,7 @@ const Settings = () => {
                   <Switch 
                     id="user-registration" 
                     checked={settings.userRegistration}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, userRegistration: checked }))}
+                    onCheckedChange={(checked) => handleSwitchChange('general', 'userRegistration', checked)}
                   />
                 </div>
 
@@ -193,9 +241,7 @@ const Settings = () => {
                   onClick={() => handleSaveSettings('general', {
                     platformName: settings.platformName,
                     contactEmail: settings.contactEmail,
-                    platformDescription: settings.platformDescription,
-                    maintenanceMode: settings.maintenanceMode,
-                    userRegistration: settings.userRegistration
+                    platformDescription: settings.platformDescription
                   })}
                 >
                   Save Changes
@@ -287,10 +333,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.notifications.newUserRegistration}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, newUserRegistration: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('notifications', 'newUserRegistration', checked)}
                     />
                   </div>
 
@@ -301,10 +344,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.notifications.newEquipmentListed}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, newEquipmentListed: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('notifications', 'newEquipmentListed', checked)}
                     />
                   </div>
 
@@ -315,10 +355,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.notifications.newRentalRequests}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, newRentalRequests: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('notifications', 'newRentalRequests', checked)}
                     />
                   </div>
 
@@ -329,22 +366,10 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.notifications.platformUpdates}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, platformUpdates: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('notifications', 'platformUpdates', checked)}
                     />
                   </div>
                 </div>
-
-                <Button 
-                  className="mt-4 bg-blue-600 text-white"
-                  onClick={() => handleSaveSettings('notifications', {
-                    notifications: settings.notifications
-                  })}
-                >
-                  Save Settings
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -364,10 +389,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.security.twoFactorAuth}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        security: { ...prev.security, twoFactorAuth: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('security', 'twoFactorAuth', checked)}
                     />
                   </div>
 
@@ -378,10 +400,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.security.passwordExpiration}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        security: { ...prev.security, passwordExpiration: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('security', 'passwordExpiration', checked)}
                     />
                   </div>
 
@@ -392,10 +411,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={settings.security.loginAttempts}
-                      onCheckedChange={(checked) => setSettings(prev => ({
-                        ...prev,
-                        security: { ...prev.security, loginAttempts: checked }
-                      }))}
+                      onCheckedChange={(checked) => handleSwitchChange('security', 'loginAttempts', checked)}
                     />
                   </div>
                 </div>
@@ -416,7 +432,10 @@ const Settings = () => {
                 <Button 
                   className="mt-4 bg-blue-600 text-white"
                   onClick={() => handleSaveSettings('security', {
-                    security: settings.security
+                    security: {
+                      ...settings.security,
+                      sessionTimeout: settings.security.sessionTimeout
+                    }
                   })}
                 >
                   Save Settings
@@ -461,10 +480,7 @@ const Settings = () => {
                   <Switch 
                     id="api-access" 
                     checked={settings.api.apiAccess}
-                    onCheckedChange={(checked) => setSettings(prev => ({
-                      ...prev,
-                      api: { ...prev.api, apiAccess: checked }
-                    }))}
+                    onCheckedChange={(checked) => handleSwitchChange('api', 'apiAccess', checked)}
                   />
                 </div>
 
@@ -485,7 +501,7 @@ const Settings = () => {
                   className="mt-4 bg-blue-600 text-white"
                   onClick={() => handleSaveSettings('api', {
                     api: {
-                      apiAccess: settings.api.apiAccess,
+                      ...settings.api,
                       rateLimit: settings.api.rateLimit
                     }
                   })}
