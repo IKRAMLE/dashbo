@@ -238,7 +238,7 @@ const Equipment = () => {
                   <img 
                     src={item.image ? `http://localhost:5000${item.image}` : "https://via.placeholder.com/300"} 
                     alt={item.name} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-fit-contain " 
                   />
                   <div className="absolute top-2 right-2">
                     <span
