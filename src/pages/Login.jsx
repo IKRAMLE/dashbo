@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import api from "@/utils/api";
+import { toast } from "react-hot-toast";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/login', {
+      const response = await api.post('/login', {
         email,
         password
       });
@@ -26,6 +27,8 @@ const Login = () => {
         localStorage.setItem('token', response.data.token);
         // Store user data
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Show success message
+        toast.success('Login successful');
         // Redirect to dashboard
         navigate('/admin/dashboard');
       } else {
@@ -33,6 +36,7 @@ const Login = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during login');
+      toast.error(err.response?.data?.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
