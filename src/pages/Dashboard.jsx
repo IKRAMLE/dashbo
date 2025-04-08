@@ -20,7 +20,7 @@ import {
   Pie,
   Cell
 } from "recharts";
-import {Users, Package, DollarSign, BarChart as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
+import { ArrowUpRight, Users, Package, DollarSign, ArrowDownRight, BarChart as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/layouts/AdminLayout";
 import axios from "axios";
