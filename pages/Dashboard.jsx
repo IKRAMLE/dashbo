@@ -57,83 +57,66 @@ const AdminDashboard = () => {
   const [equipmentStatus, setEquipmentStatus] = useState([]);
   const [monthlyRentals, setMonthlyRentals] = useState([]);
   const [equipmentCategories, setEquipmentCategories] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [quickActions, setQuickActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Mock data for recent activity
-  const recentActivity = [
-    {
-      id: 1,
-      type: 'user',
-      action: 'New user registered',
-      user: 'John Doe',
-      time: '2 minutes ago',
-      status: 'success'
-    },
-    {
-      id: 2,
-      type: 'equipment',
-      action: 'Equipment rented',
-      user: 'Alice Smith',
-      equipment: 'Excavator XL-2000',
-      time: '15 minutes ago',
-      status: 'success'
-    },
-    {
-      id: 3,
-      type: 'alert',
-      action: 'Low stock alert',
-      equipment: 'Bulldozer BD-500',
-      time: '1 hour ago',
-      status: 'warning'
-    },
-    {
-      id: 4,
-      type: 'maintenance',
-      action: 'Maintenance completed',
-      equipment: 'Crane CR-3000',
-      time: '2 hours ago',
-      status: 'success'
-    },
-    {
-      id: 5,
-      type: 'payment',
-      action: 'Payment received',
-      user: 'Bob Johnson',
-      amount: '$2,500',
-      time: '3 hours ago',
-      status: 'success'
-    }
-  ];
-
-  // Quick action buttons
-  const quickActions = [
-    { name: 'Add Equipment', icon: <Plus className="h-4 w-4" />, color: 'bg-blue-500 hover:bg-blue-600' },
-    { name: 'New Rental', icon: <Package className="h-4 w-4" />, color: 'bg-green-500 hover:bg-green-600' },
-    { name: 'View Reports', icon: <BarChartIcon className="h-4 w-4" />, color: 'bg-purple-500 hover:bg-purple-600' },
-    { name: 'Maintenance', icon: <Activity className="h-4 w-4" />, color: 'bg-amber-500 hover:bg-amber-600' }
-  ];
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/dashboard/stats', {
-          headers: {
-            'x-auth-token': token
-          }
-        });
+        const headers = {
+          'x-auth-token': token
+        };
 
-        if (response.data.success) {
-          const { stats, equipmentStatus, monthlyRentals, equipmentCategories } = response.data.data;
+        // Fetch all dashboard data in parallel
+        const [
+          statsResponse,
+          activityResponse,
+          actionsResponse
+        ] = await Promise.all([
+          axios.get('http://localhost:5000/api/dashboard/stats', { headers })
+            .catch(err => {
+              console.error('Error fetching stats:', err);
+              return { data: { success: false, error: 'Failed to fetch dashboard stats' } };
+            }),
+          axios.get('http://localhost:5000/api/dashboard/recent-activity', { headers })
+            .catch(err => {
+              console.error('Error fetching activity:', err);
+              return { data: { success: false, error: 'Failed to fetch recent activity' } };
+            }),
+          axios.get('http://localhost:5000/api/dashboard/quick-actions', { headers })
+            .catch(err => {
+              console.error('Error fetching quick actions:', err);
+              return { data: { success: false, error: 'Failed to fetch quick actions' } };
+            })
+        ]);
+
+        // Check if backend is available
+        if (!statsResponse.data.success && !activityResponse.data.success && !actionsResponse.data.success) {
+          setError('Backend server is not available. Please make sure the server is running on port 5000.');
+          return;
+        }
+
+        if (statsResponse.data.success) {
+          const { stats, equipmentStatus, monthlyRentals, equipmentCategories } = statsResponse.data.data;
           setStats(stats);
           setEquipmentStatus(equipmentStatus);
           setMonthlyRentals(monthlyRentals);
           setEquipmentCategories(equipmentCategories);
         }
+
+        if (activityResponse.data.success) {
+          setRecentActivity(activityResponse.data.data);
+        }
+
+        if (actionsResponse.data.success) {
+          setQuickActions(actionsResponse.data.data);
+        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
+        setError('Failed to load dashboard data. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -141,6 +124,36 @@ const AdminDashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  // Function to format time ago
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const diff = now - new Date(date);
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+  };
+
+  // Function to get icon component based on name
+  const getIconComponent = (iconName) => {
+    switch (iconName) {
+      case 'Plus':
+        return <Plus className="h-4 w-4" />;
+      case 'Package':
+        return <Package className="h-4 w-4" />;
+      case 'BarChart':
+        return <BarChartIcon className="h-4 w-4" />;
+      case 'Activity':
+        return <Activity className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -155,8 +168,23 @@ const AdminDashboard = () => {
   if (error) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center justify-center h-screen space-y-4">
           <div className="text-lg text-red-500">{error}</div>
+          <div className="text-sm text-gray-500">
+            If the problem persists, please check:
+            <ul className="list-disc list-inside mt-2">
+              <li>The backend server is running on port 5000</li>
+              <li>You have a valid authentication token</li>
+              <li>Your network connection is stable</li>
+            </ul>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+            className="mt-4"
+          >
+            Retry
+          </Button>
         </div>
       </AdminLayout>
     );
@@ -400,7 +428,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* New Section: Recent Activity and Quick Actions */}
+        {/* Recent Activity and Quick Actions */}
         <div className="grid gap-6 md:grid-cols-3">
           {/* Recent Activity */}
           <Card className="shadow-md hover:shadow-lg transition-shadow md:col-span-2">
@@ -426,7 +454,7 @@ const AdminDashboard = () => {
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{activity.action}</p>
                         <Badge variant="outline" className="text-xs">
-                          {activity.time}
+                          {formatTimeAgo(activity.time)}
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-500">
@@ -466,8 +494,11 @@ const AdminDashboard = () => {
                     key={index} 
                     className={`${action.color} text-white w-full justify-start`}
                   >
-                    {action.icon}
+                    {getIconComponent(action.icon)}
                     <span className="ml-2">{action.name}</span>
+                    <Badge variant="secondary" className="ml-auto">
+                      {action.count}
+                    </Badge>
                   </Button>
                 ))}
               </div>
