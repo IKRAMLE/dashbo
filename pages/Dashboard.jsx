@@ -38,7 +38,8 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  XCircle
+  XCircle,
+  RefreshCw
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -46,30 +47,84 @@ import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/layouts/AdminLayout";
 import axios from "axios";
 
-const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalEquipment: 0,
-    revenue: 0,
-    activeRentals: 0
-  });
+// Mock data for when backend is unavailable
+const mockData = {
+  stats: {
+    totalUsers: 1250,
+    totalEquipment: 450,
+    revenue: 45600,
+    activeRentals: 78
+  },
+  equipmentStatus: [
+    { name: 'Available', value: 320, color: '#10b981' },
+    { name: 'In Use', value: 78, color: '#3b82f6' },
+    { name: 'Maintenance', value: 42, color: '#D97706' },
+    { name: 'Out of Service', value: 10, color: '#ef4444' }
+  ],
+  monthlyRentals: [
+    { name: 'Jan', rentals: 65 },
+    { name: 'Feb', rentals: 59 },
+    { name: 'Mar', rentals: 80 },
+    { name: 'Apr', rentals: 81 },
+    { name: 'May', rentals: 56 },
+    { name: 'Jun', rentals: 55 },
+    { name: 'Jul', rentals: 40 },
+    { name: 'Aug', rentals: 65 },
+    { name: 'Sep', rentals: 59 },
+    { name: 'Oct', rentals: 80 },
+    { name: 'Nov', rentals: 81 },
+    { name: 'Dec', rentals: 56 }
+  ],
+  equipmentCategories: [
+    { name: 'Medical Devices', count: 180, color: '#3b82f6' },
+    { name: 'Surgical Tools', count: 120, color: '#10b981' },
+    { name: 'Diagnostic Equipment', count: 85, color: '#8b5cf6' },
+    { name: 'Rehabilitation', count: 65, color: '#f59e0b' }
+  ],
+  recentActivity: [
+    { id: 1, action: 'New user registered', status: 'success', type: 'user', user: 'John Doe', time: new Date(Date.now() - 1000 * 60 * 30) },
+    { id: 2, action: 'Equipment ordered', status: 'success', type: 'equipment', user: 'Jane Smith', equipment: 'MRI Scanner', time: new Date(Date.now() - 1000 * 60 * 60 * 2) },
+    { id: 3, action: 'Maintenance required', status: 'warning', type: 'maintenance', equipment: 'X-Ray Machine', time: new Date(Date.now() - 1000 * 60 * 60 * 5) },
+    { id: 4, action: 'Payment received', status: 'success', type: 'payment', user: 'Robert Johnson', amount: '$1,200', time: new Date(Date.now() - 1000 * 60 * 60 * 8) },
+    { id: 5, action: 'Equipment alert', status: 'error', type: 'alert', equipment: 'Ultrasound Device', time: new Date(Date.now() - 1000 * 60 * 60 * 12) }
+  ],
+  quickActions: [
+    { name: 'Add Equipment', icon: 'Plus', count: 0, color: 'bg-blue-600 hover:bg-blue-700' },
+    { name: 'Schedule Maintenance', icon: 'Package', count: 3, color: 'bg-amber-600 hover:bg-amber-700' },
+    { name: 'View Reports', icon: 'BarChart', count: 0, color: 'bg-purple-600 hover:bg-purple-700' },
+    { name: 'Check Activity', icon: 'Activity', count: 5, color: 'bg-green-600 hover:bg-green-700' }
+  ]
+};
 
-  const [equipmentStatus, setEquipmentStatus] = useState([]);
-  const [monthlyRentals, setMonthlyRentals] = useState([]);
-  const [equipmentCategories, setEquipmentCategories] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [quickActions, setQuickActions] = useState([]);
+const AdminDashboard = () => {
+  const [stats, setStats] = useState(mockData.stats);
+  const [equipmentStatus, setEquipmentStatus] = useState(mockData.equipmentStatus);
+  const [monthlyRentals, setMonthlyRentals] = useState(mockData.monthlyRentals);
+  const [equipmentCategories, setEquipmentCategories] = useState(mockData.equipmentCategories);
+  const [recentActivity, setRecentActivity] = useState(mockData.recentActivity);
+  const [quickActions, setQuickActions] = useState(mockData.quickActions);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
+  // Function to fetch dashboard data from the backend
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      const headers = {
+        'x-auth-token': token
+      };
+
+      // Try to fetch data from the backend
       try {
-        const token = localStorage.getItem('token');
-        const headers = {
-          'x-auth-token': token
-        };
-
         // Fetch all dashboard data in parallel
         const [
           statsResponse,
@@ -95,8 +150,7 @@ const AdminDashboard = () => {
 
         // Check if backend is available
         if (!statsResponse.data.success && !activityResponse.data.success && !actionsResponse.data.success) {
-          setError('Backend server is not available. Please make sure the server is running on port 5000.');
-          return;
+          throw new Error('Backend server is not available');
         }
 
         if (statsResponse.data.success) {
@@ -114,16 +168,36 @@ const AdminDashboard = () => {
         if (actionsResponse.data.success) {
           setQuickActions(actionsResponse.data.data);
         }
+        
+        setIsOffline(false);
       } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data. Please check your connection and try again.');
-      } finally {
-        setLoading(false);
+        // If backend is not available, use mock data
+        console.warn('Using mock data because backend is unavailable:', err.message);
+        setIsOffline(true);
+        setStats(mockData.stats);
+        setEquipmentStatus(mockData.equipmentStatus);
+        setMonthlyRentals(mockData.monthlyRentals);
+        setEquipmentCategories(mockData.equipmentCategories);
+        setRecentActivity(mockData.recentActivity);
+        setQuickActions(mockData.quickActions);
       }
-    };
+    } catch (err) {
+      console.error('Error in dashboard data handling:', err);
+      setError('Failed to load dashboard data. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch data on component mount and when refresh key changes
+  useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [refreshKey]);
+
+  // Function to handle refresh button click
+  const handleRefresh = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   // Function to format time ago
   const formatTimeAgo = (date) => {
@@ -155,6 +229,20 @@ const AdminDashboard = () => {
     }
   };
 
+  // Function to get status icon based on activity type
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -180,7 +268,7 @@ const AdminDashboard = () => {
           </div>
           <Button 
             variant="outline" 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
             className="mt-4"
           >
             Retry
@@ -190,20 +278,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Function to get status icon based on activity type
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-amber-500" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
   return (
     <AdminLayout>
       <div className="space-y-8 p-4">
@@ -212,7 +286,22 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#084b88] to-[#0ea5e9] bg-clip-text text-transparent">Dashboard</h1>
             <p className="text-gray-600 mt-1">Overview of platform metrics and performance</p>
           </div>
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 md:mt-0 flex items-center gap-4">
+            {isOffline && (
+              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
+                <AlertCircle className="h-4 w-4" />
+                <span>Using demo data</span>
+              </div>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Refresh</span>
+            </Button>
             <Tabs defaultValue="today" className="w-[200px]">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="today">Today</TabsTrigger>
