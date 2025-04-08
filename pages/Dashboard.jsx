@@ -47,65 +47,20 @@ import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/layouts/AdminLayout";
 import axios from "axios";
 
-// Mock data for when backend is unavailable
-const mockData = {
-  stats: {
-    totalUsers: 1250,
-    totalEquipment: 450,
-    revenue: 45600,
-    activeRentals: 78
-  },
-  equipmentStatus: [
-    { name: 'Available', value: 320, color: '#10b981' },
-    { name: 'In Use', value: 78, color: '#3b82f6' },
-    { name: 'Maintenance', value: 42, color: '#D97706' },
-    { name: 'Out of Service', value: 10, color: '#ef4444' }
-  ],
-  monthlyRentals: [
-    { name: 'Jan', rentals: 65 },
-    { name: 'Feb', rentals: 59 },
-    { name: 'Mar', rentals: 80 },
-    { name: 'Apr', rentals: 81 },
-    { name: 'May', rentals: 56 },
-    { name: 'Jun', rentals: 55 },
-    { name: 'Jul', rentals: 40 },
-    { name: 'Aug', rentals: 65 },
-    { name: 'Sep', rentals: 59 },
-    { name: 'Oct', rentals: 80 },
-    { name: 'Nov', rentals: 81 },
-    { name: 'Dec', rentals: 56 }
-  ],
-  equipmentCategories: [
-    { name: 'Medical Devices', count: 180, color: '#3b82f6' },
-    { name: 'Surgical Tools', count: 120, color: '#10b981' },
-    { name: 'Diagnostic Equipment', count: 85, color: '#8b5cf6' },
-    { name: 'Rehabilitation', count: 65, color: '#f59e0b' }
-  ],
-  recentActivity: [
-    { id: 1, action: 'New user registered', status: 'success', type: 'user', user: 'John Doe', time: new Date(Date.now() - 1000 * 60 * 30) },
-    { id: 2, action: 'Equipment ordered', status: 'success', type: 'equipment', user: 'Jane Smith', equipment: 'MRI Scanner', time: new Date(Date.now() - 1000 * 60 * 60 * 2) },
-    { id: 3, action: 'Maintenance required', status: 'warning', type: 'maintenance', equipment: 'X-Ray Machine', time: new Date(Date.now() - 1000 * 60 * 60 * 5) },
-    { id: 4, action: 'Payment received', status: 'success', type: 'payment', user: 'Robert Johnson', amount: '$1,200', time: new Date(Date.now() - 1000 * 60 * 60 * 8) },
-    { id: 5, action: 'Equipment alert', status: 'error', type: 'alert', equipment: 'Ultrasound Device', time: new Date(Date.now() - 1000 * 60 * 60 * 12) }
-  ],
-  quickActions: [
-    { name: 'Add Equipment', icon: 'Plus', count: 0, color: 'bg-blue-600 hover:bg-blue-700' },
-    { name: 'Schedule Maintenance', icon: 'Package', count: 3, color: 'bg-amber-600 hover:bg-amber-700' },
-    { name: 'View Reports', icon: 'BarChart', count: 0, color: 'bg-purple-600 hover:bg-purple-700' },
-    { name: 'Check Activity', icon: 'Activity', count: 5, color: 'bg-green-600 hover:bg-green-700' }
-  ]
-};
-
 const AdminDashboard = () => {
-  const [stats, setStats] = useState(mockData.stats);
-  const [equipmentStatus, setEquipmentStatus] = useState(mockData.equipmentStatus);
-  const [monthlyRentals, setMonthlyRentals] = useState(mockData.monthlyRentals);
-  const [equipmentCategories, setEquipmentCategories] = useState(mockData.equipmentCategories);
-  const [recentActivity, setRecentActivity] = useState(mockData.recentActivity);
-  const [quickActions, setQuickActions] = useState(mockData.quickActions);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalEquipment: 0,
+    revenue: 0,
+    activeRentals: 0
+  });
+  const [equipmentStatus, setEquipmentStatus] = useState([]);
+  const [monthlyRentals, setMonthlyRentals] = useState([]);
+  const [equipmentCategories, setEquipmentCategories] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [quickActions, setQuickActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isOffline, setIsOffline] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Function to fetch dashboard data from the backend
@@ -123,63 +78,48 @@ const AdminDashboard = () => {
         'x-auth-token': token
       };
 
-      // Try to fetch data from the backend
-      try {
-        // Fetch all dashboard data in parallel
-        const [
-          statsResponse,
-          activityResponse,
-          actionsResponse
-        ] = await Promise.all([
-          axios.get('http://localhost:5000/api/dashboard/stats', { headers })
-            .catch(err => {
-              console.error('Error fetching stats:', err);
-              return { data: { success: false, error: 'Failed to fetch dashboard stats' } };
-            }),
-          axios.get('http://localhost:5000/api/dashboard/recent-activity', { headers })
-            .catch(err => {
-              console.error('Error fetching activity:', err);
-              return { data: { success: false, error: 'Failed to fetch recent activity' } };
-            }),
-          axios.get('http://localhost:5000/api/dashboard/quick-actions', { headers })
-            .catch(err => {
-              console.error('Error fetching quick actions:', err);
-              return { data: { success: false, error: 'Failed to fetch quick actions' } };
-            })
-        ]);
+      // Fetch all dashboard data in parallel
+      const [
+        statsResponse,
+        activityResponse,
+        actionsResponse
+      ] = await Promise.all([
+        axios.get('http://localhost:5000/api/dashboard/stats', { headers })
+          .catch(err => {
+            console.error('Error fetching stats:', err);
+            return { data: { success: false, error: 'Failed to fetch dashboard stats' } };
+          }),
+        axios.get('http://localhost:5000/api/dashboard/recent-activity', { headers })
+          .catch(err => {
+            console.error('Error fetching activity:', err);
+            return { data: { success: false, error: 'Failed to fetch recent activity' } };
+          }),
+        axios.get('http://localhost:5000/api/dashboard/quick-actions', { headers })
+          .catch(err => {
+            console.error('Error fetching quick actions:', err);
+            return { data: { success: false, error: 'Failed to fetch quick actions' } };
+          })
+      ]);
 
-        // Check if backend is available
-        if (!statsResponse.data.success && !activityResponse.data.success && !actionsResponse.data.success) {
-          throw new Error('Backend server is not available');
-        }
+      // Check if backend is available
+      if (!statsResponse.data.success && !activityResponse.data.success && !actionsResponse.data.success) {
+        throw new Error('Backend server is not available');
+      }
 
-        if (statsResponse.data.success) {
-          const { stats, equipmentStatus, monthlyRentals, equipmentCategories } = statsResponse.data.data;
-          setStats(stats);
-          setEquipmentStatus(equipmentStatus);
-          setMonthlyRentals(monthlyRentals);
-          setEquipmentCategories(equipmentCategories);
-        }
+      if (statsResponse.data.success) {
+        const { stats, equipmentStatus, monthlyRentals, equipmentCategories } = statsResponse.data.data;
+        setStats(stats);
+        setEquipmentStatus(equipmentStatus);
+        setMonthlyRentals(monthlyRentals);
+        setEquipmentCategories(equipmentCategories);
+      }
 
-        if (activityResponse.data.success) {
-          setRecentActivity(activityResponse.data.data);
-        }
+      if (activityResponse.data.success) {
+        setRecentActivity(activityResponse.data.data);
+      }
 
-        if (actionsResponse.data.success) {
-          setQuickActions(actionsResponse.data.data);
-        }
-        
-        setIsOffline(false);
-      } catch (err) {
-        // If backend is not available, use mock data
-        console.warn('Using mock data because backend is unavailable:', err.message);
-        setIsOffline(true);
-        setStats(mockData.stats);
-        setEquipmentStatus(mockData.equipmentStatus);
-        setMonthlyRentals(mockData.monthlyRentals);
-        setEquipmentCategories(mockData.equipmentCategories);
-        setRecentActivity(mockData.recentActivity);
-        setQuickActions(mockData.quickActions);
+      if (actionsResponse.data.success) {
+        setQuickActions(actionsResponse.data.data);
       }
     } catch (err) {
       console.error('Error in dashboard data handling:', err);
@@ -287,12 +227,6 @@ const AdminDashboard = () => {
             <p className="text-gray-600 mt-1">Overview of platform metrics and performance</p>
           </div>
           <div className="mt-4 md:mt-0 flex items-center gap-4">
-            {isOffline && (
-              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>Using demo data</span>
-              </div>
-            )}
             <Button 
               variant="outline" 
               size="sm" 
