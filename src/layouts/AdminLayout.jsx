@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Users, Package, Settings, BarChart, LogOut } from "lucide-react";
-<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
 
 const AdminLayout = ({ children }) => {
@@ -28,19 +27,6 @@ const AdminLayout = ({ children }) => {
     return () => {
       window.removeEventListener("popstate", handleRouteChange);
     };
-=======
-import { useNavigate, Link, useLocation } from "react-router-dom";
-
-const AdminLayout = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // Get user data from localStorage
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    setUser(userData);
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
   }, []);
 
   // Function to handle logout
@@ -52,11 +38,7 @@ const AdminLayout = ({ children }) => {
 
   // Function to determine if a link is active
   const isActive = (path) => {
-<<<<<<< HEAD
     return activePath === path;
-=======
-    return location.pathname === path;
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
   };
 
   // Function to get link classes based on active state
@@ -95,61 +77,34 @@ const AdminLayout = ({ children }) => {
           
           {/* Navigation */}
           <nav className="flex-1 px-4 pt-2 pb-4 space-y-1">
-<<<<<<< HEAD
             <a
               href="/admin/dashboard"
-=======
-            <Link
-              to="/admin/dashboard"
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
               className={getLinkClasses("/admin/dashboard")}
             >
               <BarChart className={getIconClasses("/admin/dashboard")} />
               Dashboard
-<<<<<<< HEAD
             </a>
             <a
               href="/admin/users"
-=======
-            </Link>
-            <Link
-              to="/admin/users"
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
               className={getLinkClasses("/admin/users")}
             >
               <Users className={getIconClasses("/admin/users")} />
               Users
-<<<<<<< HEAD
             </a>
             <a
               href="/admin/equipment"
-=======
-            </Link>
-            <Link
-              to="/admin/equipment"
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
               className={getLinkClasses("/admin/equipment")}
             >
               <Package className={getIconClasses("/admin/equipment")} />
               Equipment
-<<<<<<< HEAD
             </a>
             <a
               href="/admin/settings"
-=======
-            </Link>
-            <Link
-              to="/admin/settings"
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
               className={getLinkClasses("/admin/settings")}
             >
               <Settings className={getIconClasses("/admin/settings")} />
               Settings
-<<<<<<< HEAD
             </a>
-=======
-            </Link>
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
           </nav>
           
           {/* Profile & Logout */}

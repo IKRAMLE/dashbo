@@ -1,5 +1,4 @@
 import * as React from "react";
-<<<<<<< HEAD
 
 // Card component
 const Card = React.forwardRef(({ className, ...props }, ref) => {
@@ -12,22 +11,6 @@ const Card = React.forwardRef(({ className, ...props }, ref) => {
   );
 });
 Card.displayName = "Card";
-=======
-import { cn } from "@/lib/utils";
-
-// Card component
-const Card = ({ className, ...props }) => {
-  return (
-    <div
-      className={cn(
-        "rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm",
-        className
-      )}
-      {...props}
-    />
-  );
-};
->>>>>>> a83699f3511572d16d077c429be4a1b144221cef
 
 // CardHeader component
 const CardHeader = React.forwardRef(({ className, ...props }, ref) => {
